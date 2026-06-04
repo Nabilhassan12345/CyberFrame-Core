@@ -5,6 +5,10 @@ import subprocess
 import re
 from datetime import datetime
 from database import SessionLocal, ThreatLog
+from services.threat_api import threat_api
+from services.geoip_tracker import geoip_tracker
+from core.firewall_engine import firewall
+from services.alert_manager import alert_manager
 
 class SecurityEngine:
     def __init__(self):
@@ -46,21 +50,42 @@ class SecurityEngine:
                     if conn_id not in self.known_connections:
                         self.known_connections.add(conn_id)
                         
-                        # Heuristics based on real ports
-                        if port in [22, 23]:
-                            self._log_threat(ip, "Suspicious SSH/Telnet Activity", "High", "Quarantined")
-                        elif port in [6667, 6668, 6669]:
-                            self._log_threat(ip, "Potential IRC Botnet Comms", "Critical", "Blocked")
-                        elif port in [445, 135, 139]:
-                            self._log_threat(ip, "SMB/RPC Exposure Detected", "High", "Blocked")
-                        elif port in [80, 443]:
-                            # Normal web traffic
-                            if random.random() < 0.05: # Randomly sample 5% of web traffic for the dashboard demo
-                                self._log_threat(ip, f"Outbound Web Traffic (Port {port})", "Low", "Logged")
+                        # 1. Threat Intel Check
+                        intel = threat_api.check_ip_reputation(ip)
+                        score = intel.get("risk_score", 0)
+                        
+                        # 2. GeoIP Check
+                        geo = geoip_tracker.lookup(ip)
+                        location = f"{geo['city']}, {geo['country']}"
+                        
+                        # 3. Determine Severity & Action
+                        severity = "Low"
+                        action = "Logged"
+                        detection_type = f"Outbound Connection ({port})"
+                        
+                        if score > 90:
+                            severity = "CRITICAL"
+                            action = "Quarantined"
+                            detection_type = f"Malicious IP ({intel['category']})"
+                        elif score > 70 or port in [22, 23, 445, 135, 139]:
+                            severity = "High"
+                            action = "Blocked"
+                            if port in [22, 23]: detection_type = "Suspicious SSH/Telnet"
+                        elif score > 50 or port in [6667, 6668, 6669]:
+                            severity = "Medium"
+                            if port in [6667, 6668, 6669]: detection_type = "Potential IRC Botnet Comms"
                         else:
-                            # Unusual ports
-                            if random.random() < 0.1: # Sample 10%
-                                self._log_threat(ip, f"Unusual High Port Connection ({port})", "Medium", "Logged")
+                            if random.random() > 0.05: continue # Ignore 95% of safe traffic
+                        
+                        # 4. Trigger Firewall
+                        if action in ["Blocked", "Quarantined"]:
+                            firewall.block_ip(ip)
+                            
+                        # 5. Trigger Alert
+                        if severity == "CRITICAL":
+                            alert_manager.trigger_critical_alert(ip, detection_type)
+                            
+                        self._log_threat(ip, f"{detection_type} [{location}]", severity, action)
 
         except Exception as e:
             print(f"Error parsing lsof: {e}")
