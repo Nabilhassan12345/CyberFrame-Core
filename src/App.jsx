@@ -46,6 +46,18 @@ function App() {
     }
   };
 
+  const quarantineIp = async (ip) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/firewall/block?ip=${ip}`, { method: 'POST' });
+      if (res.ok) {
+        alert(`Successfully quarantined IP: ${ip}`);
+        fetchThreats();
+      }
+    } catch (e) {
+      console.error("Failed to quarantine IP", e);
+    }
+  };
+
   const renderOverview = () => (
     <>
       {/* Top KPI Cards */}
@@ -90,6 +102,7 @@ function App() {
                   <th>Severity</th>
                   <th>Action Taken</th>
                   <th>Time</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>

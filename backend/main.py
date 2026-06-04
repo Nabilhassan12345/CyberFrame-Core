@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 from typing import List
 import psutil
 
-from database import SessionLocal, ThreatLog, engine
+from database import engine, Base, SessionLocal, ThreatLog
 from security import security_engine
+from core.firewall_engine import firewall
 
 app = FastAPI(title="CyberFrame Core API")
 
@@ -66,3 +67,22 @@ def get_recent_threats(db: Session = Depends(get_db), limit: int = 10):
 @app.post("/api/scan")
 def run_manual_scan():
     return {"message": "Manual deep scan initiated across all endpoints."}
+
+@app.post("/api/engine/stop")
+def stop_engine():
+    security_engine.stop()
+    return {"status": "success", "message": "Engine stopped"}
+
+@app.post("/api/firewall/block")
+def manual_block(ip: str):
+    success = firewall.block_ip(ip)
+    if success:
+        return {"status": "success", "message": f"IP {ip} quarantined"}
+    return {"status": "error", "message": "Failed to block IP"}
+
+@app.post("/api/firewall/allow")
+def manual_allow(ip: str):
+    success = firewall.allow_ip(ip)
+    if success:
+        return {"status": "success", "message": f"IP {ip} allowed"}
+    return {"status": "error", "message": "Failed to allow IP"}
