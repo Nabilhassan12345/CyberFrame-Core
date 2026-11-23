@@ -2,7 +2,7 @@
   <img src="./public/icons.svg" alt="CyberFrame Core Logo" width="120" />
 
   <h1>🛡️ CyberFrame Core</h1>
-  <p><b>An Open-Source, Enterprise-Grade Cybersecurity Engine & Dashboard</b></p>
+  <p><b>An open-source connection-monitoring engine and dashboard (FastAPI + React)</b></p>
   
   <p>
     <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
@@ -22,7 +22,10 @@
 ---
 
 ## 🚨 Why CyberFrame Core?
-Cybersecurity shouldn't cost $10,000/month. **CyberFrame Core** is a completely free, open-source alternative to expensive enterprise Managed Security Service Providers (MSSPs). It provides a real-time Threat Detection Engine built in **Python** (FastAPI) combined with a stunning, high-performance glassmorphism dashboard built in **React** (Vite).
+
+![CyberFrame Core dashboard showing live connection feed](docs/screenshots/dashboard.png)
+
+**CyberFrame Core** is an open-source security dashboard project. It provides a real-time Threat Detection Engine built in **Python** (FastAPI) combined with a glassmorphism dashboard built in **React** (Vite).
 
 ## ✨ Features
 - **⚡ Real-Time Threat Engine**: Simulates and detects DDoS, XSS, and SQL Injection attempts.
